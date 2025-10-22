@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSRF Token Security Demo</title>
+    <meta name="author" content="Onivaldo Miquelino">      
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: ui-sans-serif, system-ui; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-xl">
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Demo de Token CSRF (PHP Session)</h1>
+        
+        <div class="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+            <p class="text-sm font-medium text-gray-700 mb-2">Token CSRF Armazenado para Envio:</p>
+            <p id="localTokenDisplay" class="break-all font-mono text-sm text-gray-500">Nenhum token criado ainda.</p>
+        </div>
+
+        <div class="mt-6 flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+            <button id="createTokenBtn" class="w-full py-3 px-4 rounded-md shadow-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                1. Criar Token CSRF
+            </button>
+            <button id="verifyTokenBtn" class="w-full py-3 px-4 rounded-md shadow-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                2. Verificar Token CSRF
+            </button>
+        </div>
+        
+        <div class="mt-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Status da Operação:</h3>
+            <div id="statusComponent" class="p-4 rounded-md min-h-[4rem] flex items-center">
+                <p id="statusMessage" class="font-medium text-gray-700">Clique em "Criar Token CSRF" para iniciar a sessão.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ******************************************************************************
+        // ATENÇÃO: Mude esta URL para o caminho correto do seu arquivo api.php no servidor
+        // ******************************************************************************
+        const API_URL = 'api.php'; 
+
+        const createTokenBtn = document.getElementById('createTokenBtn');
+        const verifyTokenBtn = document.getElementById('verifyTokenBtn');
+        const statusComponent = document.getElementById('statusComponent');
+        const statusMessage = document.getElementById('statusMessage');
+        const localTokenDisplay = document.getElementById('localTokenDisplay');
+        
+        let localCSRFToken = ''; // Armazena o token para ser enviado na verificação
+
+        // --- Funções de Status ---
+
+        function updateStatus(message, bgColor = 'bg-gray-100', textColor = 'text-gray-800') {
+            statusMessage.textContent = message;
+            statusComponent.className = `p-4 rounded-md min-h-[4rem] flex items-center ${bgColor}`;
+            statusMessage.className = `font-medium ${textColor}`;
+        }
+        
+        function updateLocalTokenDisplay(token) {
+            localTokenDisplay.textContent = token || 'Nenhum token criado ou token invalidado.';
+            localCSRFToken = token;
+        }
+
+        // --- Ações da API ---
+
+        async function createToken() {
+            updateStatus('⏳ Criando token CSRF na sessão...', 'bg-yellow-100', 'text-yellow-700');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'create_token' })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatus(`✅ ${result.message}`, 'bg-blue-100', 'text-blue-800');
+                    updateLocalTokenDisplay(result.token);
+                } else {
+                    updateStatus(`❌ Erro ao criar token: ${result.error}`, 'bg-red-200', 'text-red-800');
+                    updateLocalTokenDisplay('');
+                }
+            } catch (error) {
+                updateStatus(`❌ Falha na comunicação: ${error.message}`, 'bg-red-200', 'text-red-800');
+                updateLocalTokenDisplay('');
+            }
+        }
+
+        async function verifyToken() {
+            if (!localCSRFToken) {
+                updateStatus('⚠️ Por favor, crie um token primeiro.', 'bg-orange-100', 'text-orange-800');
+                return;
+            }
+            
+            updateStatus('⏳ Enviando e verificando token CSRF...', 'bg-yellow-100', 'text-yellow-700');
+
+            try {
+                // Enviando o token no corpo da requisição e no cabeçalho X-CSRF-Token (boa prática)
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': localCSRFToken // Enviando via cabeçalho
+                    },
+                    body: JSON.stringify({ 
+                        action: 'verify_token', 
+                        user_token: localCSRFToken // Enviando via corpo
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    updateStatus(`✅ ${result.message}`, 'bg-green-200', 'text-green-800');
+                    // O token foi invalidado no backend
+                    updateLocalTokenDisplay(''); 
+                } else {
+                    const errorMessage = result.error || 'Erro desconhecido na verificação.';
+                    updateStatus(`❌ Verificação FALHOU: ${errorMessage}`, 'bg-red-200', 'text-red-800');
+                    // Mantém o token na exibição se a verificação falhou (para debug)
+                }
+            } catch (error) {
+                updateStatus(`❌ Falha na comunicação: ${error.message}`, 'bg-red-200', 'text-red-800');
+            }
+        }
+
+        // --- Listeners ---
+        createTokenBtn.addEventListener('click', createToken);
+        verifyTokenBtn.addEventListener('click', verifyToken);
+
+    </script>
+</body>
+</html>
+
