@@ -12,6 +12,16 @@
 
 # 🔒 PHP CSRF Protector: Session-Based Token Demo
 
+![Made with PHP](https://img.shields.io/badge/PHP-777BB4?logo=php&logoColor=white)
+![Frontend JavaScript](https://img.shields.io/badge/Frontend-JavaScript-F7DF1E?logo=javascript&logoColor=black)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38B2AC?logo=tailwindcss&logoColor=white)
+![License MIT](https://img.shields.io/badge/License-MIT-green)
+![Status Stable](https://img.shields.io/badge/Status-Stable-success)
+![Version 1.0.0](https://img.shields.io/badge/Version-1.0.0-blue)
+![GitHub stars](https://img.shields.io/github/stars/NinoMiquelino/csrf-token-sessao?style=social)
+![GitHub forks](https://img.shields.io/github/forks/NinoMiquelino/csrf-token-sessao?style=social)
+![GitHub issues](https://img.shields.io/github/issues/NinoMiquelino/csrf-token-sessao)
+
 Este projeto ilustra a implementação de um sistema robusto de proteção contra ataques **CSRF (Cross-Site Request Forgery)**. O backend é construído em PHP, utilizando funções de segurança de sessão e geração de tokens de alta entropia. O frontend, estilizado com Tailwind CSS, permite testar o fluxo de criação, envio e validação do token.
 
 ---
